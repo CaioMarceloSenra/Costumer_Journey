@@ -13,7 +13,11 @@ if st.button("Gerar PDF de Teste"):
     pdf.cell(200, 10, txt=f"Aluno: {nome}", ln=2, align='L')
     
     # Gerar o PDF em bytes para o Streamlit
-    pdf_output = pdf.output(dest='S')
-    
-    st.success("PDF gerado com sucesso!")
-    st.download_button(label="Baixar Teste", data=pdf_output, file_name="teste.pdf")
+pdf_output = bytes(pdf.output()) 
+
+st.download_button(
+    label="📥 Baixar Projeto (PDF)",
+    data=pdf_output,
+    file_name=f"Projeto_Extensao_{ra}.pdf",
+    mime="application/pdf"
+)
