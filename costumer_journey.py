@@ -182,14 +182,13 @@ elif st.session_state.passo == 2:
                 for termo in st.session_state.termos_upload:
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 12)
-                    pdf.cell(0, 10, "ANEXO: TERMO DE CESSÃO", ln=True, align='C')
+                    pdf.cell(0, 10, "ANEXO: TERMO DE CONCESSÃO", ln=True, align='C')
                     img_t = Image.open(termo).convert("RGB")
                     img_t.thumbnail((1000, 1000))
                     buf_t = io.BytesIO()
                     img_t.save(buf_t, format="JPEG")
                     pdf.image(buf_t, x=15, w=180)
 
-            pdf_bytes = bytes(pdf.output())
-            st.success("✅ Tudo pronto! Seu PDF profissional foi gerado.")
-            st.download_button("📥 Baixar Relatório Final", pdf_bytes, f"Relatorio_{st.session_state.matricula}.pdf", "application/pdf")
+    
+
 
