@@ -9,25 +9,27 @@ CINZA_UNI = (117, 120, 123)
 
 class PDF(FPDF):
     def header(self):
-        # Logo à esquerda
+        # Logo aumentada para 50mm de largura
         try:
-            self.image('logo.png', 10, 8, 33) 
+            self.image('logo.png', 10, 8, 50) 
         except:
             pass
         
-        # Título em Azul Unicesumar
         self.set_font("Arial", 'B', 14)
         self.set_text_color(*AZUL_UNI)
-        self.cell(45) # Espaço da logo
+        
+        # Aumentamos o recuo de 45 para 62 para acomodar a logo maior
+        self.cell(62) 
         self.cell(0, 10, "RELATÓRIO DE EVIDÊNCIAS", ln=True, align='L')
+        
         self.set_font("Arial", 'I', 9)
-        self.cell(45)
+        self.cell(62)
         self.cell(0, 5, "Projeto de Atividade Extensionista", ln=True, align='L')
         
-        # Linha divisória elegante
+        # Ajustamos a linha divisória para começar um pouco mais abaixo
         self.set_draw_color(*AZUL_UNI)
-        self.line(10, 32, 200, 32)
-        self.ln(15)
+        self.line(10, 35, 200, 35)
+        self.ln(18)
 
     def footer(self):
         self.set_y(-15)
@@ -121,3 +123,4 @@ with tab3:
             pdf_bytes = bytes(pdf.output())
             st.success("PDF Estilizado Gerado com Sucesso!")
             st.download_button("📥 Baixar Relatório", pdf_bytes, f"Relatorio_{matricula}.pdf", "application/pdf")
+
