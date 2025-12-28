@@ -122,57 +122,64 @@ elif st.session_state.passo == 2:
                 pdf.multi_cell(0, 6, fix(st.session_state.relato), align='L')
                 pdf.ln(10)
 
-            # 3. EVIDÊNCIAS FOTOGRÁFICAS (Sem limite de 8)
+          # --- 3. EVIDÊNCIAS FOTOGRÁFICAS (Com Borda e Grade) ---
             if "fotos_upload" in st.session_state and st.session_state.fotos_upload:
                 pdf.set_font("Arial", 'B', 10)
                 pdf.set_text_color(*AZUL_UNI)
                 pdf.cell(0, 8, " EVIDÊNCIAS FOTOGRÁFICAS", ln=True, fill=True)
                 pdf.ln(5)
                 
-                # Variáveis para controle de grade (2 colunas)
-                coluna = 0 
-                largura_img = 90
-                espacamento = 5
+                # Configuração da borda
+                pdf.set_draw_color(*AZUL_UNI) # Azul Oficial Unicesumar
+                pdf.set_line_width(0.5)        # Espessura da borda (fina e elegante)
                 
-                for foto in st.session_state.fotos_upload:
+                fotos_grade = st.session_state.fotos_upload[:8]
+                
+                for i, foto in enumerate(fotos_grade):
                     img = Image.open(foto).convert("RGB")
+                    # Forçamos um redimensionamento para manter a proporção na grade
                     img.thumbnail((800, 800))
                     buf = io.BytesIO()
-                    img.save(buf, format="JPEG", quality=75)
+                    img.save(buf, format="JPEG", quality=85)
                     
-                    # Checa se a imagem cabe na página atual (considerando a altura da imagem ~70mm)
-                    if pdf.get_y() > 220: 
+                    # Lógica de Colunas
+                    coluna = i % 2 
+                    if i > 0 and i % 4 == 0: 
                         pdf.add_page()
-                        coluna = 0
-                    
-                    # Define X baseado na coluna (0 ou 1)
+                    elif i > 0 and i % 2 == 0: 
+                        pdf.ln(75) 
+
                     x_pos = 10 if coluna == 0 else 105
-                    y_atual = pdf.get_y()
+                    y_pos = pdf.get_y()
+                    largura_moldura = 90
+                    altura_moldura = 65 # Altura fixa para manter a simetria da grade
                     
-                    pdf.image(buf, x=x_pos, y=y_atual, w=largura_img)
+                    # 1. Desenha a Imagem
+                    pdf.image(buf, x=x_pos, y=y_pos, w=largura_moldura, h=altura_moldura)
                     
-                    if coluna == 0:
-                        coluna = 1 # Próxima foto será na direita
-                    else:
-                        coluna = 0 # Próxima foto será na esquerda, mas na linha de baixo
-                        pdf.set_y(y_atual + 75) # Pula para a próxima linha
+                    # 2. Desenha a Borda Azul por cima
+                    # rect(x, y, w, h)
+                    pdf.rect(x_pos, y_pos, largura_moldura, altura_moldura)
 
-                # Se terminar em coluna 1, precisa baixar o cursor Y para não sobrepor o próximo item
-                if coluna == 1: pdf.ln(80)
-
-            # --- 4. TERMOS 
-            if "termos_upload" in st.session_state and st.session_state.termos_upload:
-                for termo in st.session_state.termos_upload:
-                    pdf.add_page()
-                    pdf.set_font("Arial", 'B', 12)
-                    pdf.set_text_color(*AZUL_UNI)
-                    pdf.cell(0, 10, "ANEXO: DOCUMENTAÇÃO COMPLEMENTAR", ln=True, align='C')
-                    pdf.ln(5)
-                    img_t = Image.open(termo).convert("RGB")
-                    img_t.thumbnail((1200, 1200))
-                    buf_t = io.BytesIO()
-                    img_t.save(buf_t, format="JPEG", quality=80)
-                    pdf.image(buf_t, x=15, w=180)
+                pdf.set_y(pdf.get_y() + 80)
+            
+# --- 4. TERMOS E ANEXOS (Página Inteira) ---
+if "termos_upload" in st.session_state and st.session_state.termos_upload:
+    for termo in st.session_state.termos_upload:
+        pdf.add_page() # Cada documento ganha sua própria página limpa
+        pdf.set_font("Arial", 'B', 12)
+        pdf.set_text_color(*AZUL_UNI)
+        pdf.cell(0, 10, "ANEXO: DOCUMENTAÇÃO COMPLEMENTAR", ln=True, align='C')
+        pdf.ln(5)
+        
+        img_t = Image.open(termo).convert("RGB")
+        # Thumbnail maior para ocupar a página quase toda
+        img_t.thumbnail((1200, 1600)) 
+        buf_t = io.BytesIO()
+        img_t.save(buf_t, format="JPEG", quality=90)
+        
+        # w=190 centraliza a imagem na página (A4 tem 210mm, sobra 10mm de margem cada lado)
+        pdf.image(buf_t, x=10, w=190)
 
             # --- 5. FINALIZAÇÃO (O "Lacre" do PDF) ---
             pdf_bytes = bytes(pdf.output())
@@ -188,6 +195,7 @@ elif st.session_state.passo == 2:
             
 
     
+
 
 
 
