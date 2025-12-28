@@ -24,7 +24,7 @@ def passo_anterior(): st.session_state.passo -= 1
 class PDF(FPDF):
     def header(self):
         try:
-            # Tenta carregar o logo se existir
+            # Carrega a logo da Unicesumar
             self.image('logo.png', 10, 8, 50) 
         except:
             pass
@@ -190,5 +190,6 @@ elif st.session_state.passo == 2:
                 )
             except Exception as e:
                 st.error(f"Erro ao gerar PDF: {e}")
+
 
 
