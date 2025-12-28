@@ -82,11 +82,15 @@ elif st.session_state.passo == 1:
 # --- PASSO 2: FINALIZAÇÃO ---
 elif st.session_state.passo == 2:
     st.subheader("✅ Conclusão e Geração")
+    
+    # 1. Uploader de Termos com Verificação de Segurança
     termos = st.file_uploader("Anexar fotos dos Termos (Opcional)", accept_multiple_files=True, type=['jpg', 'png'], key="termos_temp")
+    
     if termos:
         st.session_state.termos_salvos = termos
 
-    if st.session_state.termos_salvos:
+    # Verificação segura: só exibe sucesso se a lista não estiver vazia
+    if "termos_salvos" in st.session_state and st.session_state.termos_salvos:
         st.success(f"✅ {len(st.session_state.termos_salvos)} termo(s) carregado(s)!")
     
     st.warning("Verifique se todos os dados estão corretos antes de gerar o PDF.")
@@ -94,23 +98,96 @@ elif st.session_state.passo == 2:
     col_nav = st.columns(2)
     with col_nav[0]: st.button("⬅️ Voltar", on_click=passo_anterior)
     
+    # 2. O Processo de Geração
     if st.button("🚀 GERAR PDF PROFISSIONAL"):
-        with st.spinner("Gerando documento..."):
-            pdf = PDF()
-            pdf.alias_nb_pages()
-            pdf.set_auto_page_break(auto=True, margin=25)
-            pdf.add_page()
-            
-            def fix(t): return str(t).encode('latin-1', 'replace').decode('latin-1')
+        with st.spinner("Construindo seu relatório..."):
+            try:
+                pdf = PDF()
+                pdf.alias_nb_pages()
+                pdf.set_auto_page_break(auto=True, margin=25)
+                pdf.add_page()
+                
+                # Função interna para tratar caracteres especiais (acentos)
+                def fix(t): return str(t).encode('latin-1', 'replace').decode('latin-1')
 
-            # 1. DADOS DO ALUNO
-            pdf.set_fill_color(245, 245, 245)
-            pdf.set_font("Arial", 'B', 10)
-            pdf.set_text_color(*AZUL_UNI)
-            pdf.cell(0, 8, " DADOS DO ACADÊMICO", ln=True, fill=True)
-            pdf.set_text_color(0, 0, 0)
-            pdf.set_font("Arial", size=10)
-            pdf.ln(2)
-            pdf.cell(0, 7, f"ATIVIDADE: {fix(st.session_state.atividade.upper())}", ln=True)
-            pdf.cell(0, 7, f"ALUNO: {fix(st.session_state.nome.upper())} | RA: {st.session_state.matricula}",
-                    )
+                # --- PARTE 1: DADOS DO ACADÊMICO ---
+                pdf.set_fill_color(245, 245, 245)
+                pdf.set_font("Arial", 'B', 10)
+                pdf.set_text_color(*AZUL_UNI)
+                pdf.cell(0, 8, fix(" DADOS DO ACADÊMICO"), ln=True, fill=True)
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font("Arial", size=10)
+                pdf.ln(2)
+                pdf.cell(0, 7, fix(f"ATIVIDADE: {st.session_state.atividade.upper()}"), ln=True)
+                pdf.cell(0, 7, fix(f"ALUNO: {st.session_state.nome.upper()} | RA: {st.session_state.matricula}"), ln=True)
+                pdf.ln(5)
+
+                # --- PARTE 2: DESCRIÇÃO ---
+                if st.session_state.relato:
+                    pdf.set_font("Arial", 'B', 10)
+                    pdf.set_text_color(*AZUL_UNI)
+                    pdf.cell(0, 8, fix(" DESCRIÇÃO DA ATIVIDADE"), ln=True, fill=True)
+                    pdf.ln(2)
+                    pdf.set_text_color(50, 50, 50)
+                    pdf.set_font("Arial", size=10)
+                    pdf.multi_cell(0, 6, fix(st.session_state.relato), align='L')
+                    pdf.ln(10)
+
+                # --- PARTE 3: EVIDÊNCIAS (Fotos Salvas) ---
+                if "fotos_salvas" in st.session_state and st.session_state.fotos_salvas:
+                    pdf.set_font("Arial", 'B', 10)
+                    pdf.set_text_color(*AZUL_UNI)
+                    pdf.cell(0, 8, fix(" EVIDÊNCIAS FOTOGRÁFICAS"), ln=True, fill=True)
+                    pdf.ln(5)
+                    pdf.set_draw_color(*AZUL_UNI)
+                    
+                    for i, foto in enumerate(st.session_state.fotos_salvas[:8]):
+                        img = Image.open(foto).convert("RGB")
+                        img.thumbnail((800, 800))
+                        buf = io.BytesIO()
+                        img.save(buf, format="JPEG", quality=85)
+                        
+                        col = i % 2
+                        if i > 0 and i % 2 == 0: pdf.ln(70)
+                        
+                        x_pos = 10 if col == 0 else 105
+                        y_pos = pdf.get_y()
+                        
+                        if y_pos > 220:
+                            pdf.add_page()
+                            y_pos = pdf.get_y()
+
+                        pdf.image(buf, x=x_pos, y=y_pos, w=90, h=65)
+                        pdf.rect(x_pos, y_pos, 90, 65)
+                    
+                    pdf.set_y(pdf.get_y() + 75)
+
+                # --- PARTE 4: ANEXOS (Termos Salvos) ---
+                if "termos_salvos" in st.session_state and st.session_state.termos_salvos:
+                    for termo in st.session_state.termos_salvos:
+                        pdf.add_page()
+                        pdf.set_font("Arial", 'B', 12)
+                        pdf.set_text_color(*AZUL_UNI)
+                        pdf.cell(0, 10, fix("ANEXO: DOCUMENTAÇÃO COMPLEMENTAR"), ln=True, align='C')
+                        pdf.ln(5)
+                        
+                        img_t = Image.open(termo).convert("RGB")
+                        img_t.thumbnail((1200, 1600))
+                        buf_t = io.BytesIO()
+                        img_t.save(buf_t, format="JPEG", quality=90)
+                        pdf.image(buf_t, x=10, w=190)
+
+                # --- FINALIZAÇÃO E DOWNLOAD ---
+                pdf_output = pdf.output(dest='S')
+                pdf_bytes = pdf_output.encode('latin-1') if isinstance(pdf_output, str) else bytes(pdf_output)
+
+                st.success("✅ Relatório gerado!")
+                st.download_button(
+                    label="📥 Baixar Relatório Final",
+                    data=pdf_bytes,
+                    file_name=f"Relatorio_{st.session_state.matricula}.pdf",
+                    mime="application/pdf"
+                )
+            except Exception as e:
+                st.error(f"Erro ao gerar PDF: {e}")
+
