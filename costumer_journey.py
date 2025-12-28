@@ -163,12 +163,22 @@ elif st.session_state.passo == 2:
                     img_t.save(buf_t, format="JPEG", quality=90)
                     pdf.image(buf_t, x=10, w=190)
 
-            pdf_output = pdf.output(dest='S')
-            st.success("✅ Relatório gerado com sucesso!")
-            st.download_button(
-                label="📥 Baixar Relatório Final",
-                data=pdf_output,
-                file_name=f"Relatorio_{st.session_state.matricula}.pdf",
-                mime="application/pdf"
-            )
-
+            # --- 5. FINALIZAÇÃO (Ajustado para evitar o erro) ---
+        pdf_output = pdf.output(dest='S')
+        
+        # O segredo está aqui: garantir que o dado seja 'bytes'
+        if isinstance(pdf_output, str):
+            # Se for string (comum na fpdf antiga), codifica para latin-1 (padrão PDF)
+            pdf_bytes = pdf_output.encode('latin-1')
+        else:
+            # Se for bytearray (comum na fpdf2), converte para bytes puros
+            pdf_bytes = bytes(pdf_output)
+        
+        # --- 6. EXIBIÇÃO NO BROWSER ---
+        st.success("✅ Relatório gerado com sucesso!")
+        st.download_button(
+            label="📥 Baixar Relatório Final", 
+            data=pdf_bytes, # Usamos os bytes convertidos
+            file_name=f"Relatorio_{st.session_state.matricula}.pdf", 
+            mime="application/pdf"
+        )
