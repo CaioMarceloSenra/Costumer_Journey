@@ -160,7 +160,7 @@ elif st.session_state.passo == 2:
                 # Se terminar em coluna 1, precisa baixar o cursor Y para não sobrepor o próximo item
                 if coluna == 1: pdf.ln(80)
 
-            # 4. TERMOS (Anexos em páginas novas)
+            # --- 4. TERMOS 
             if "termos_upload" in st.session_state and st.session_state.termos_upload:
                 for termo in st.session_state.termos_upload:
                     pdf.add_page()
@@ -174,21 +174,20 @@ elif st.session_state.passo == 2:
                     img_t.save(buf_t, format="JPEG", quality=80)
                     pdf.image(buf_t, x=15, w=180)
 
+            # --- 5. FINALIZAÇÃO (O "Lacre" do PDF) ---
             pdf_bytes = bytes(pdf.output())
+            
+            # --- 6. EXIBIÇÃO NO BROWSER ---
             st.success("✅ Relatório gerado com sucesso!")
-            st.download_button("📥 Baixar Relatório Final", pdf_bytes, f"Relatorio_{st.session_state.matricula}.pdf", "application/pdf")
-            # Termos (Páginas extras)
-            if "termos_upload" in st.session_state and st.session_state.termos_upload:
-                for termo in st.session_state.termos_upload:
-                    pdf.add_page()
-                    pdf.set_font("Arial", 'B', 12)
-                    pdf.cell(0, 10, "ANEXO: TERMO DE CONCESSÃO", ln=True, align='C')
-                    img_t = Image.open(termo).convert("RGB")
-                    img_t.thumbnail((1000, 1000))
-                    buf_t = io.BytesIO()
-                    img_t.save(buf_t, format="JPEG")
-                    pdf.image(buf_t, x=15, w=180)
+            st.download_button(
+                label="📥 Baixar Relatório Final", 
+                data=pdf_bytes, 
+                file_name=f"Relatorio_{st.session_state.matricula}.pdf", 
+                mime="application/pdf"
+            )
+            
 
     
+
 
 
