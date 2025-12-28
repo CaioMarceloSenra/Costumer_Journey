@@ -99,7 +99,7 @@ elif st.session_state.passo == 2:
     with col_nav[0]: st.button("⬅️ Voltar", on_click=passo_anterior)
     
     # 2. O Processo de Geração
-    if st.button("🚀 GERAR PDF PROFISSIONAL"):
+    if st.button("🚀 GERAR RELATÓRIO"):
         with st.spinner("Construindo seu relatório..."):
             try:
                 pdf = PDF()
@@ -190,4 +190,5 @@ elif st.session_state.passo == 2:
                 )
             except Exception as e:
                 st.error(f"Erro ao gerar PDF: {e}")
+
 
