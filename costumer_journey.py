@@ -181,9 +181,6 @@ if "termos_upload" in st.session_state and st.session_state.termos_upload:
         # w=190 centraliza a imagem na página (A4 tem 210mm, sobra 10mm de margem cada lado)
         pdf.image(buf_t, x=10, w=190)
 
-        # --- 5. FINALIZAÇÃO (O "Lacre" do PDF) ---
-        pdf_bytes = bytes(pdf.output())
-            
        # --- 6. EXIBIÇÃO NO BROWSER ---
     st.success("✅ Relatório gerado com sucesso!")
     st.download_button(
@@ -191,9 +188,14 @@ if "termos_upload" in st.session_state and st.session_state.termos_upload:
         data=pdf_bytes, 
         file_name=f"Relatorio_{st.session_state.matricula}.pdf", 
         mime="application/pdf"
+
+        # --- 5. FINALIZAÇÃO (O "Lacre" do PDF) ---
+        pdf_bytes = bytes(pdf.output())
+            
     )
 
     
+
 
 
 
