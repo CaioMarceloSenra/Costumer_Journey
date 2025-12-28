@@ -78,27 +78,27 @@ elif st.session_state.passo == 1:
     with col_nav[1]: st.button("Próximo ➡️", on_click=proximo_passo)
 
 # --- PASSO 2: FINALIZAÇÃO ---
+# --- PASSO 2: FINALIZAÇÃO (Versão Fluxo Dinâmico) ---
 elif st.session_state.passo == 2:
-    st.subheader("✅ Conclusão")
+    st.subheader("✅ Conclusão e Geração")
     termos = st.file_uploader("Anexar fotos dos Termos (Opcional)", accept_multiple_files=True, type=['jpg', 'png'], key="termos_upload")
     
-    st.warning("Verifique se os dados estão corretos. Ao clicar, o PDF será gerado instantaneamente.")
+    st.warning("O PDF agora é dinâmico: ele crescerá de acordo com o tamanho do seu texto e quantidade de fotos.")
     
     st.markdown("---")
     col_nav = st.columns(2)
     with col_nav[0]: st.button("⬅️ Voltar", on_click=passo_anterior)
     
     if st.button("🚀 GERAR PDF PROFISSIONAL"):
-        with st.spinner("Otimizando imagens e criando documento..."):
+        with st.spinner("Gerando documento dinâmico..."):
             pdf = PDF()
             pdf.alias_nb_pages()
-            pdf.set_auto_page_break(auto=True, margin=20)
+            pdf.set_auto_page_break(auto=True, margin=25) # Margem de segurança maior
             pdf.add_page()
             
-            # Helper para evitar erro de Unicode (ç, ã, etc)
             def fix(t): return t.encode('latin-1', 'replace').decode('latin-1')
 
-            # Cabeçalho de Identificação
+            # 1. DADOS DO ALUNO
             pdf.set_fill_color(245, 245, 245)
             pdf.set_font("Arial", 'B', 10)
             pdf.set_text_color(*AZUL_UNI)
@@ -110,7 +110,7 @@ elif st.session_state.passo == 2:
             pdf.cell(0, 7, f"ALUNO: {fix(st.session_state.nome.upper())} | RA: {st.session_state.matricula}", ln=True)
             pdf.ln(5)
 
-            # Descrição (Justificada à Esquerda para evitar espaços grandes)
+            # 2. DESCRIÇÃO (O PDF vai empurrar tudo para baixo automaticamente)
             if st.session_state.relato:
                 pdf.set_font("Arial", 'B', 10)
                 pdf.set_text_color(*AZUL_UNI)
@@ -118,28 +118,65 @@ elif st.session_state.passo == 2:
                 pdf.ln(2)
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font("Arial", size=10)
+                # multi_cell gerencia quebras de página automáticas para textos longos
                 pdf.multi_cell(0, 6, fix(st.session_state.relato), align='L')
-                pdf.ln(5)
+                pdf.ln(10)
 
-            # Processamento das Fotos (Otimizado)
+            # 3. EVIDÊNCIAS FOTOGRÁFICAS (Sem limite de 8)
             if "fotos_upload" in st.session_state and st.session_state.fotos_upload:
                 pdf.set_font("Arial", 'B', 10)
                 pdf.set_text_color(*AZUL_UNI)
                 pdf.cell(0, 8, " EVIDÊNCIAS FOTOGRÁFICAS", ln=True, fill=True)
                 pdf.ln(5)
                 
-                for i, foto in enumerate(st.session_state.fotos_upload[:8]):
+                # Variáveis para controle de grade (2 colunas)
+                coluna = 0 
+                largura_img = 90
+                espacamento = 5
+                
+                for foto in st.session_state.fotos_upload:
                     img = Image.open(foto).convert("RGB")
-                    img.thumbnail((700, 700)) # Otimiza o tamanho para o PDF não travar
+                    img.thumbnail((800, 800))
                     buf = io.BytesIO()
-                    img.save(buf, format="JPEG", quality=80) # Qualidade 80 para ser rápido
+                    img.save(buf, format="JPEG", quality=75)
                     
-                    x = 10 if i % 2 == 0 else 105
-                    if i % 2 == 0 and i > 0: pdf.ln(70)
-                    if pdf.get_y() > 230: pdf.add_page()
-                    pdf.image(buf, x=x, y=pdf.get_y(), w=90)
-                pdf.ln(75)
+                    # Checa se a imagem cabe na página atual (considerando a altura da imagem ~70mm)
+                    if pdf.get_y() > 220: 
+                        pdf.add_page()
+                        coluna = 0
+                    
+                    # Define X baseado na coluna (0 ou 1)
+                    x_pos = 10 if coluna == 0 else 105
+                    y_atual = pdf.get_y()
+                    
+                    pdf.image(buf, x=x_pos, y=y_atual, w=largura_img)
+                    
+                    if coluna == 0:
+                        coluna = 1 # Próxima foto será na direita
+                    else:
+                        coluna = 0 # Próxima foto será na esquerda, mas na linha de baixo
+                        pdf.set_y(y_atual + 75) # Pula para a próxima linha
 
+                # Se terminar em coluna 1, precisa baixar o cursor Y para não sobrepor o próximo item
+                if coluna == 1: pdf.ln(80)
+
+            # 4. TERMOS (Anexos em páginas novas)
+            if "termos_upload" in st.session_state and st.session_state.termos_upload:
+                for termo in st.session_state.termos_upload:
+                    pdf.add_page()
+                    pdf.set_font("Arial", 'B', 12)
+                    pdf.set_text_color(*AZUL_UNI)
+                    pdf.cell(0, 10, "ANEXO: DOCUMENTAÇÃO COMPLEMENTAR", ln=True, align='C')
+                    pdf.ln(5)
+                    img_t = Image.open(termo).convert("RGB")
+                    img_t.thumbnail((1200, 1200))
+                    buf_t = io.BytesIO()
+                    img_t.save(buf_t, format="JPEG", quality=80)
+                    pdf.image(buf_t, x=15, w=180)
+
+            pdf_bytes = bytes(pdf.output())
+            st.success("✅ Relatório gerado com sucesso!")
+            st.download_button("📥 Baixar Relatório Final", pdf_bytes, f"Relatorio_{st.session_state.matricula}.pdf", "application/pdf")
             # Termos (Páginas extras)
             if "termos_upload" in st.session_state and st.session_state.termos_upload:
                 for termo in st.session_state.termos_upload:
@@ -155,3 +192,4 @@ elif st.session_state.passo == 2:
             pdf_bytes = bytes(pdf.output())
             st.success("✅ Tudo pronto! Seu PDF profissional foi gerado.")
             st.download_button("📥 Baixar Relatório Final", pdf_bytes, f"Relatorio_{st.session_state.matricula}.pdf", "application/pdf")
+
