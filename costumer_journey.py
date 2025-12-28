@@ -76,9 +76,56 @@ elif st.session_state.passo == 1:
     col_nav = st.columns(2)
     with col_nav[0]: st.button("⬅️ Voltar", on_click=passo_anterior)
     with col_nav[1]: st.button("Próximo ➡️", on_click=proximo_passo)
+    # --- 3. EVIDÊNCIAS FOTOGRÁFICAS (A Lógica que você quer está AQUI) ---
+if "fotos_upload" in st.session_state and st.session_state.fotos_upload:
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_text_color(*AZUL_UNI)
+    pdf.cell(0, 8, " EVIDÊNCIAS FOTOGRÁFICAS", ln=True, fill=True)
+    pdf.ln(5)
+    
+    # Configuração da Moldura Azul Unicesumar
+    pdf.set_draw_color(*AZUL_UNI) 
+    pdf.set_line_width(0.5)
+    
+    # Definição das Dimensões da Grade (Grid)
+    largura_moldura = 90
+    altura_moldura = 65
+    espacamento_entre_fotos = 5
+    
+    # Capturamos a posição Y atual após o texto da descrição
+    y_referencia = pdf.get_y()
+    
+    # Filtramos para as primeiras 8 fotos conforme sua regra
+    fotos_para_processar = st.session_state.fotos_upload[:8]
+    
+    for i, foto in enumerate(fotos_para_processar):
+        # 1. Decidimos se vai para a Esquerda ou Direita
+        coluna = i % 2 # 0 = Esquerda, 1 = Direita
+        
+        # 2. Gerenciamento de Páginas e Linhas
+        if i > 0 and i % 4 == 0:
+            pdf.add_page()
+            y_referencia = 40 # Resetamos o Y para o topo da nova página
+        elif i > 0 and i % 2 == 0:
+            # Se for uma nova linha na mesma página, descemos o Y
+            y_referencia += altura_moldura + espacamento_entre_fotos
 
-# --- PASSO 2: FINALIZAÇÃO ---
-# --- PASSO 2: FINALIZAÇÃO (Versão Fluxo Dinâmico) ---
+        x_pos = 10 if coluna == 0 else 105
+        
+        # 3. Processamento da Imagem (Otimização)
+        img = Image.open(foto).convert("RGB")
+        img.thumbnail((800, 800))
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        
+        # 4. Desenho da Imagem e da Moldura Azul
+        pdf.image(buf, x=x_pos, y=y_referencia, w=largura_moldura, h=altura_moldura)
+        pdf.rect(x_pos, y_referencia, largura_moldura, altura_moldura)
+
+    # Movemos o cursor para baixo de todas as fotos para o próximo bloco
+    pdf.set_y(y_referencia + altura_moldura + 10)
+
+# --- PASSO 2: FINALIZAÇÃO 
 elif st.session_state.passo == 2:
     st.subheader("✅ Conclusão e Geração")
     termos = st.file_uploader("Anexar fotos dos Termos (Opcional)", accept_multiple_files=True, type=['jpg', 'png'], key="termos_upload")
@@ -193,6 +240,7 @@ elif st.session_state.passo == 2:
         )
 
     
+
 
 
 
