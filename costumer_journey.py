@@ -114,7 +114,7 @@ elif st.session_state.passo == 2:
                 pdf.ln(10)
 
             # 3. FOTOS EM GRADE
-            if st.session_state.fotos_upload:
+            if "fotos_upload" in st.session_state and st.session_state.fotos_upload:
                 pdf.set_font("Arial", 'B', 10)
                 pdf.set_text_color(*AZUL_UNI)
                 pdf.cell(0, 8, " EVIDÊNCIAS FOTOGRÁFICAS", ln=True, fill=True)
@@ -171,3 +171,4 @@ elif st.session_state.passo == 2:
                 file_name=f"Relatorio_{st.session_state.matricula}.pdf",
                 mime="application/pdf"
             )
+
