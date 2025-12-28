@@ -113,3 +113,4 @@ elif st.session_state.passo == 2:
             pdf.ln(2)
             pdf.cell(0, 7, f"ATIVIDADE: {fix(st.session_state.atividade.upper())}", ln=True)
             pdf.cell(0, 7, f"ALUNO: {fix(st.session_state.nome.upper())} | RA: {st.session_state.matricula}",
+                    )
