@@ -164,38 +164,36 @@ elif st.session_state.passo == 2:
                 pdf.set_y(pdf.get_y() + 80)
             
 # --- 4. TERMOS E ANEXOS (Página Inteira) ---
-if "termos_upload" in st.session_state and st.session_state.termos_upload:
-    for termo in st.session_state.termos_upload:
-        pdf.add_page() # Cada documento ganha sua própria página limpa
-        pdf.set_font("Arial", 'B', 12)
-        pdf.set_text_color(*AZUL_UNI)
-        pdf.cell(0, 10, "ANEXO: DOCUMENTAÇÃO COMPLEMENTAR", ln=True, align='C')
-        pdf.ln(5)
-        
-        img_t = Image.open(termo).convert("RGB")
-        # Thumbnail maior para ocupar a página quase toda
-        img_t.thumbnail((1200, 1600)) 
-        buf_t = io.BytesIO()
-        img_t.save(buf_t, format="JPEG", quality=90)
-        
-        # w=190 centraliza a imagem na página (A4 tem 210mm, sobra 10mm de margem cada lado)
-        pdf.image(buf_t, x=10, w=190)
-        
-        # --- 5. FINALIZAÇÃO (O "Lacre" do PDF) ---
+        if "termos_upload" in st.session_state and st.session_state.termos_upload:
+            for termo in st.session_state.termos_upload:
+                pdf.add_page() # Cada documento ganha sua própria página limpa
+                pdf.set_font("Arial", 'B', 12)
+                pdf.set_text_color(*AZUL_UNI)
+                pdf.cell(0, 10, "ANEXO: DOCUMENTAÇÃO COMPLEMENTAR", ln=True, align='C')
+                pdf.ln(5)
+                
+                img_t = Image.open(termo).convert("RGB")
+                img_t.thumbnail((1200, 1600)) 
+                buf_t = io.BytesIO()
+                img_t.save(buf_t, format="JPEG", quality=90)
+                
+                pdf.image(buf_t, x=10, w=190)
+            # <--- O LOOP TERMINA AQUI
+
+        # --- 5. FINALIZAÇÃO (Deve estar ALINHADO com o 'if', fora do 'for') ---
         pdf_bytes = bytes(pdf.output())
         
-       # --- 6. EXIBIÇÃO NO BROWSER ---
-    st.success("✅ Relatório gerado com sucesso!")
-    st.download_button(
-        label="📥 Baixar Relatório Final", 
-        data=pdf_bytes, 
-        file_name=f"Relatorio_{st.session_state.matricula}.pdf", 
-        mime="application/pdf"
-
-            
-    )
+        # --- 6. EXIBIÇÃO NO BROWSER ---
+        st.success("✅ Relatório gerado com sucesso!")
+        st.download_button(
+            label="📥 Baixar Relatório Final", 
+            data=pdf_bytes, 
+            file_name=f"Relatorio_{st.session_state.matricula}.pdf", 
+            mime="application/pdf"
+        )
 
     
+
 
 
 
